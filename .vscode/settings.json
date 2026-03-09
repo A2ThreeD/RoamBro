@@ -1,0 +1,11 @@
+{
+  "arduino.cliPath": "/opt/homebrew/bin/arduino-cli",
+  "arduino.cli.useBuiltin": false,
+  "arduino.autoDetectCli": false,
+  "arduino.defaultFqbn": "rp2040:rp2040:rpipico",
+  "files.associations": {
+    "*.ino": "cpp"
+  },
+  "C_Cpp.default.configurationProvider": "ms-vscode.cpptools",
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/.arduino/build/compile_commands.json"
+}

@@ -1,0 +1,9 @@
+{
+  "additionalFiles": "",
+  "compiler.optimization_flags": "",
+  "customBuildProperties": "",
+  "fqbn": "rp2040:rp2040:rpipico",
+  "hardwareFolders": "/Users/morrisaaron/Library/Arduino15/packages/rp2040/hardware/rp2040/5.3.0,/Users/morrisaaron/Library/Arduino15/packages/rp2040/hardware/rp2040/5.3.0",
+  "otherLibrariesFolders": "/Users/morrisaaron/Documents/Arduino/libraries",
+  "sketchLocation": "/Users/morrisaaron/Documents/Arduino/WalkBro/Walkbro"
+}

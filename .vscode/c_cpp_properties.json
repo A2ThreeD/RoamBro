@@ -1,0 +1,28 @@
+{
+  "configurations": [
+    {
+      "name": "WalkBro RP2040",
+      "compilerPath": "/Users/morrisaaron/Library/Arduino15/packages/rp2040/tools/pqt-gcc/4.1.0-1aec55e/bin/arm-none-eabi-g++",
+      "intelliSenseMode": "gcc-arm",
+      "cStandard": "c11",
+      "cppStandard": "c++17",
+      "compileCommands": "${workspaceFolder}/.arduino/build/compile_commands.json",
+      "includePath": [
+        "${workspaceFolder}",
+        "/Users/morrisaaron/Library/Arduino15/packages/rp2040/hardware/rp2040/5.3.0/cores/rp2040",
+        "/Users/morrisaaron/Library/Arduino15/packages/rp2040/hardware/rp2040/5.3.0/variants/rpipico",
+        "/Users/morrisaaron/Library/Arduino15/packages/rp2040/hardware/rp2040/5.3.0/libraries/**",
+        "/Users/morrisaaron/Documents/Arduino/libraries/**"
+      ],
+      "defines": [
+        "ARDUINO=10607",
+        "ARDUINO_ARCH_RP2040",
+        "ARDUINO_RASPBERRY_PI_PICO",
+        "ARDUINO_VARIANT=\"rpipico\"",
+        "BOARD_NAME=\"RASPBERRY_PI_PICO\"",
+        "F_CPU=200000000L"
+      ]
+    }
+  ],
+  "version": 4
+}

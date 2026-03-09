@@ -18,8 +18,39 @@
  * Description: Plays MP3/WAV files and emulates a walkman style tape device.
  * Date: 3/07/2026
  * Notes: V1.0 - First major version of code
+ *
+ * Hardware:
+ * RP2350 "zero" microcontroller
+ * PCM5102 DAC
+ * MicroSD card reader
+ * PN532 NFC reader
+ * 10K potentiometer for volume control
+ * 3 Buttons for play/pause, next, and previous
+ * 1 Function button for future use
+ * 1 LED for status indication
+ * 
+ * Functionality:
+ * Emulates a cassette tape device that can be controlled with play/pause, next, and previous buttons. The "tapes" are represented 
+ * by NFC tags that contain the album name in an NDEF text record. When a tag is detected, the corresponding album folder is loaded 
+ * from the SD card and tracks can be played. This behavior mimics a standard cassette player where inserting or removing a tape
+ * requires the user to press play/pause to start or resume playback, and the player remembers the position of the tape when removed.
+ *
+ * Reads MP3/WAV files from SD card and plays through DAC.
+ * 
+ * If a user presses play/pause while a tape is playing, it will pause. Pressing play/pause again will resume. 
+ * 
+ * If the tape is removed while paused, it will remember the position and resume from there if the same tape is reinserted.
+ * If a different tape is inserted, it will start from the beginning of that tape.
+ * 
+ * If the user presses next/previous while playing, it will skip to the next/previous track. 
+ * If they long-press next/previous, it will enter a fast-forward/rewind mode that seeks through the track until released.
+ * 
+ * The LED indicates status: off when idle, solid when playing, slow blink when paused, and different animations for tape insertion/removal.
+ * 
+ * Volume is controlled by the potentiometer, which adjusts the gain of the audio output.
 
-*/
+ * 
+ */
 
 #include <Wire.h>
 #include <SPI.h>
@@ -28,9 +59,9 @@
 #include <PN532_I2C.h>
 #include <PN532.h>
 
-#include <I2S.h>
-#include <BackgroundAudioMP3.h>
-#include <BackgroundAudioWAV.h>
+#include <AudioTools.h>
+#include <AudioTools/AudioCodecs/CodecMP3Helix.h>
+#include <AudioTools/AudioCodecs/CodecWAV.h>
 
 #include <vector>
 #include <algorithm>
@@ -63,6 +94,13 @@
 
 #define SPI_SPEED SD_SCK_MHZ(40)
 #define BUTTON_DEBOUNCE_MS 30
+#define BUTTON_LONG_PRESS_MS 450
+#define SCAN_STEP_INTERVAL_MS 90
+#define SCAN_PLAYBACK_MULTIPLIER 3.0f
+#define PREVIOUS_RESTART_THRESHOLD_SEC 3.0f
+#define WAV_MIN_DATA_OFFSET 44
+#define AUDIO_PUMP_CHUNKS_PER_LOOP 2
+#define MP3_FRAME_SEARCH_WINDOW 8192
 
 // ========================================================
 // NFC
@@ -75,10 +113,12 @@ PN532 nfc(pn532_i2c);
 // AUDIO
 // ========================================================
 
-I2S audio(OUTPUT);
-
-BackgroundAudioMP3Class<RawDataBuffer<16 * 1024>> mp3Player(audio);
-BackgroundAudioWAVClass<RawDataBuffer<16 * 1024>> wavPlayer(audio);
+I2SStream audioOutput;
+VolumeStream volumeControl(audioOutput);
+MP3DecoderHelix mp3Decoder;
+WAVDecoder wavDecoder;
+EncodedAudioStream decoderStream(&volumeControl, &mp3Decoder);
+AudioDecoder *activeDecoder = nullptr;
 
 enum CodecType {
   CODEC_NONE,
@@ -87,9 +127,6 @@ enum CodecType {
 };
 
 CodecType activeCodec = CODEC_NONE;
-
-bool mp3Started = false;
-bool wavStarted = false;
 
 float currentGain = 0.5f;
 float filteredPotNorm = 0.5f;
@@ -112,12 +149,14 @@ struct ButtonState {
   uint8_t pin;
   bool stableLevel;
   bool lastRawLevel;
+  bool longHandled;
   uint32_t lastChange;
+  uint32_t pressedAt;
 };
 
-ButtonState btnPrev = {BTN_PREV_PIN, true, true, 0};
-ButtonState btnPlay = {BTN_PLAY_PIN, true, true, 0};
-ButtonState btnNext = {BTN_NEXT_PIN, true, true, 0};
+ButtonState btnPrev = {BTN_PREV_PIN, true, true, false, 0, 0};
+ButtonState btnPlay = {BTN_PLAY_PIN, true, true, false, 0, 0};
+ButtonState btnNext = {BTN_NEXT_PIN, true, true, false, 0, 0};
 
 // ========================================================
 // STATE
@@ -127,6 +166,18 @@ enum PlayerState {
   STATE_IDLE,
   STATE_PLAYING,
   STATE_PAUSED
+};
+
+enum PauseReason {
+  PAUSE_NONE,
+  PAUSE_USER,
+  PAUSE_TAG_REMOVED
+};
+
+enum ScanMode {
+  SCAN_NONE,
+  SCAN_REWIND,
+  SCAN_FAST_FORWARD
 };
 
 enum LedMode {
@@ -140,6 +191,17 @@ enum LedMode {
 
 LedMode ledMode = LED_OFF;
 PlayerState playerState = STATE_IDLE;
+PauseReason pauseReason = PAUSE_NONE;
+ScanMode scanMode = SCAN_NONE;
+uint32_t lastScanStepMs = 0;
+String currentAlbumName;
+String presentAlbumName;
+uint8_t loadedTagUid[7] = {0};
+uint8_t loadedTagUidLength = 0;
+bool hasLoadedTag = false;
+uint8_t presentTagUid[7] = {0};
+uint8_t presentTagUidLength = 0;
+bool hasPresentTag = false;
 
 // ========================================================
 // UTIL
@@ -163,6 +225,227 @@ bool isSupportedFile(const String &name) {
 void clearPlaylist() {
   playlist.clear();
   currentTrackIndex = -1;
+  currentAlbumName = "";
+}
+
+bool tagUidMatches(const uint8_t *lhs, uint8_t lhsLength,
+                   const uint8_t *rhs, uint8_t rhsLength) {
+  if (lhsLength != rhsLength) return false;
+  return memcmp(lhs, rhs, lhsLength) == 0;
+}
+
+bool loadedTagMatches(const uint8_t *uid, uint8_t uidLength) {
+  if (!hasLoadedTag) return false;
+  return tagUidMatches(loadedTagUid, loadedTagUidLength, uid, uidLength);
+}
+
+bool presentTagMatches(const uint8_t *uid, uint8_t uidLength) {
+  if (!hasPresentTag) return false;
+  return tagUidMatches(presentTagUid, presentTagUidLength, uid, uidLength);
+}
+
+void rememberLoadedTag(const uint8_t *uid, uint8_t uidLength) {
+  if (uidLength > sizeof(loadedTagUid)) uidLength = sizeof(loadedTagUid);
+  memcpy(loadedTagUid, uid, uidLength);
+  loadedTagUidLength = uidLength;
+  hasLoadedTag = true;
+}
+
+void clearLoadedTag() {
+  hasLoadedTag = false;
+  loadedTagUidLength = 0;
+}
+
+void rememberPresentTag(const uint8_t *uid, uint8_t uidLength, const String &albumName) {
+  if (uidLength > sizeof(presentTagUid)) uidLength = sizeof(presentTagUid);
+  memcpy(presentTagUid, uid, uidLength);
+  presentTagUidLength = uidLength;
+  hasPresentTag = true;
+  presentAlbumName = albumName;
+}
+
+void clearPresentTag() {
+  hasPresentTag = false;
+  presentTagUidLength = 0;
+  presentAlbumName = "";
+}
+
+void stopAudioPipeline(bool flushOutput) {
+  if (currentTrackFile) currentTrackFile.close();
+
+  decoderStream.end();
+
+  if (flushOutput) {
+    audioOutput.flush();
+  }
+
+  activeDecoder = nullptr;
+  activeCodec = CODEC_NONE;
+}
+
+void restartDecoderAtCurrentPosition() {
+  if (activeDecoder == nullptr) return;
+
+  decoderStream.end();
+  decoderStream.setDecoder(activeDecoder);
+  decoderStream.begin();
+  volumeControl.setVolume(currentGain);
+}
+
+void setPaused(PauseReason reason) {
+  if (playerState == STATE_IDLE) return;
+  playerState = STATE_PAUSED;
+  pauseReason = reason;
+  scanMode = SCAN_NONE;
+}
+
+void resumePlayback() {
+  if (playerState == STATE_IDLE) return;
+  playerState = STATE_PLAYING;
+  pauseReason = PAUSE_NONE;
+}
+
+float encodedBytesPerSecond() {
+  if (activeCodec == CODEC_WAV) {
+    WAVAudioInfo info = wavDecoder.audioInfoEx();
+    if (info.byte_rate > 0) return info.byte_rate;
+  } else if (activeCodec == CODEC_MP3) {
+    MP3FrameInfo info = mp3Decoder.audioInfoEx();
+    if (info.bitrate > 0) return info.bitrate / 8.0f;
+  }
+
+  return 16000.0f;
+}
+
+bool isLikelyMp3FrameHeader(uint32_t header) {
+  if ((header & 0xFFE00000UL) != 0xFFE00000UL) return false;
+
+  uint8_t versionBits = (header >> 19) & 0x03;
+  uint8_t layerBits = (header >> 17) & 0x03;
+  uint8_t bitrateIndex = (header >> 12) & 0x0F;
+  uint8_t sampleRateIndex = (header >> 10) & 0x03;
+
+  if (versionBits == 0x01) return false;
+  if (layerBits == 0x00) return false;
+  if (bitrateIndex == 0x00 || bitrateIndex == 0x0F) return false;
+  if (sampleRateIndex == 0x03) return false;
+
+  return true;
+}
+
+long findMp3FrameBoundary(long anchor, bool searchBackward) {
+  if (!currentTrackFile) return anchor;
+
+  long originalPos = (long)currentTrackFile.position();
+  long fileSize = (long)currentTrackFile.size();
+  long endLimit = fileSize - 4;
+
+  if (anchor < 0) anchor = 0;
+  if (anchor > endLimit) anchor = endLimit;
+
+  long start = searchBackward ? max(0L, anchor - MP3_FRAME_SEARCH_WINDOW) : anchor;
+  long end = searchBackward ? anchor : min(endLimit, anchor + MP3_FRAME_SEARCH_WINDOW);
+
+  uint8_t searchBuffer[259];
+  int carry = 0;
+  long found = -1;
+  long pos = start;
+
+  while (pos <= end) {
+    if (!currentTrackFile.seek(pos)) break;
+
+    size_t chunkLen = (size_t)min(256L, end - pos + 1);
+    int bytesRead = currentTrackFile.read(searchBuffer + carry, chunkLen);
+    if (bytesRead <= 0) break;
+
+    int total = carry + bytesRead;
+    for (int i = 0; i <= total - 4; i++) {
+      uint32_t header = ((uint32_t)searchBuffer[i] << 24) |
+                        ((uint32_t)searchBuffer[i + 1] << 16) |
+                        ((uint32_t)searchBuffer[i + 2] << 8) |
+                        ((uint32_t)searchBuffer[i + 3]);
+
+      if (isLikelyMp3FrameHeader(header)) {
+        long candidate = pos - carry + i;
+        if (searchBackward) {
+          found = candidate;
+        } else {
+          currentTrackFile.seek(originalPos);
+          return candidate;
+        }
+      }
+    }
+
+    carry = min(3, total);
+    memmove(searchBuffer, searchBuffer + total - carry, carry);
+    pos += bytesRead;
+  }
+
+  currentTrackFile.seek(originalPos);
+  return found >= 0 ? found : anchor;
+}
+
+bool seekCurrentTrackRelative(long deltaBytes) {
+  if (!currentTrackFile || activeCodec == CODEC_NONE) return false;
+
+  long minPos = 0;
+  if (activeCodec == CODEC_WAV) {
+    minPos = WAV_MIN_DATA_OFFSET;
+  }
+
+  long maxPos = (long)currentTrackFile.size() - 1;
+  if (maxPos < minPos) maxPos = minPos;
+
+  long target = (long)currentTrackFile.position() + deltaBytes;
+  if (target < minPos) target = minPos;
+  if (target > maxPos) target = maxPos;
+
+  if (activeCodec == CODEC_MP3) {
+    target = findMp3FrameBoundary(target, deltaBytes < 0);
+  }
+
+  if (target == (long)currentTrackFile.position()) return false;
+  if (!currentTrackFile.seek(target)) return false;
+
+  audioOutput.flush();
+
+  if (activeCodec == CODEC_MP3) {
+    restartDecoderAtCurrentPosition();
+  }
+
+  return true;
+}
+
+void updateScanPlayback() {
+  if (scanMode == SCAN_NONE || playerState != STATE_PLAYING || !currentTrackFile) return;
+
+  uint32_t now = millis();
+  if (now - lastScanStepMs < SCAN_STEP_INTERVAL_MS) return;
+
+  uint32_t elapsed = now - lastScanStepMs;
+  lastScanStepMs = now;
+
+  float extraFactor = SCAN_PLAYBACK_MULTIPLIER - 1.0f;
+  if (scanMode == SCAN_REWIND) {
+    extraFactor = -(SCAN_PLAYBACK_MULTIPLIER + 1.0f);
+  }
+
+  long deltaBytes = (long)(encodedBytesPerSecond() * extraFactor * (elapsed / 1000.0f));
+  if (deltaBytes == 0) {
+    deltaBytes = scanMode == SCAN_REWIND ? -512 : 512;
+  }
+
+  seekCurrentTrackRelative(deltaBytes);
+}
+
+void startScanPlayback(ScanMode mode) {
+  if (playerState != STATE_PLAYING || !currentTrackFile) return;
+  scanMode = mode;
+  lastScanStepMs = millis();
+}
+
+void stopScanPlayback() {
+  scanMode = SCAN_NONE;
 }
 
 // ========================================================
@@ -196,7 +479,7 @@ String readNDEFText() {
     uint8_t typeLen = raw[i++];
 
     uint32_t payloadLen = shortRecord ? raw[i++] :
-      (raw[i]<<24)|(raw[i+1]<<16)|(raw[i+2]<<8)|raw[i+3];
+      (raw[i] << 24) | (raw[i + 1] << 16) | (raw[i + 2] << 8) | raw[i + 3];
 
     if (!shortRecord) i += 4;
 
@@ -283,29 +566,44 @@ bool startTrackByIndex(int idx) {
 
   if (idx < 0 || idx >= (int)playlist.size()) return false;
 
-  if (currentTrackFile) currentTrackFile.close();
-
-  currentTrackIndex = idx;
-
-  // FIX 1: Normalise path to lowercase before codec detection
-  // so .MP3 / .WAV files on the SD card are handled correctly.
   String path = playlist[idx];
   String pathLower = path;
   pathLower.toLowerCase();
 
+  AudioDecoder *nextDecoder = nullptr;
+  CodecType nextCodec = CODEC_NONE;
+
   if (isMp3File(pathLower)) {
-    if (!mp3Started) { mp3Player.begin(); mp3Started = true; }
-    activeCodec = CODEC_MP3;
-  }
-  else if (isWavFile(pathLower)) {
-    if (!wavStarted) { wavPlayer.begin(); wavStarted = true; }
-    activeCodec = CODEC_WAV;
+    nextDecoder = &mp3Decoder;
+    nextCodec = CODEC_MP3;
+  } else if (isWavFile(pathLower)) {
+    nextDecoder = &wavDecoder;
+    nextCodec = CODEC_WAV;
+  } else {
+    return false;
   }
 
-  currentTrackFile = SD.open(path.c_str(), FILE_READ);
-  if (!currentTrackFile) return false;
+  File nextFile = SD.open(path.c_str(), FILE_READ);
+  if (!nextFile) return false;
 
+  stopAudioPipeline(true);
+
+  currentTrackFile = nextFile;
+  currentTrackIndex = idx;
+  activeDecoder = nextDecoder;
+  activeCodec = nextCodec;
+  pauseReason = PAUSE_NONE;
+  scanMode = SCAN_NONE;
+
+  decoderStream.setDecoder(activeDecoder);
+  if (!decoderStream.begin()) {
+    stopAudioPipeline(false);
+    return false;
+  }
+
+  volumeControl.setVolume(currentGain);
   playerState = STATE_PLAYING;
+
   Serial.println(path);
   return true;
 }
@@ -317,6 +615,15 @@ void nextTrack() {
 
 void previousTrack() {
   if (playlist.empty()) return;
+
+  if (currentTrackFile && currentTrackIndex >= 0) {
+    long restartThresholdBytes = (long)(encodedBytesPerSecond() * PREVIOUS_RESTART_THRESHOLD_SEC);
+    if ((long)currentTrackFile.position() > restartThresholdBytes) {
+      startTrackByIndex(currentTrackIndex);
+      return;
+    }
+  }
+
   int prev = currentTrackIndex - 1;
   if (prev < 0) prev = playlist.size() - 1;
   startTrackByIndex(prev);
@@ -351,22 +658,19 @@ void startPlaybackFromAlbum(const String &albumName) {
   }
 
   std::sort(playlist.begin(), playlist.end());
-  startTrackByIndex(0);
+  if (!startTrackByIndex(0)) {
+    Serial.println("Unable to start first track");
+    clearPlaylist();
+    clearLoadedTag();
+    playerState = STATE_IDLE;
+  } else {
+    currentAlbumName = albumName;
+  }
 }
 
-void handleRemoval() {
+void handleCassetteRemoval() {
   ledMode = LED_REMOVE_ANIM;
-
-  if (currentTrackFile) currentTrackFile.close();
-
-  // Only flush the codec that was actually in use
-  if (activeCodec == CODEC_MP3) mp3Player.flush();
-  else if (activeCodec == CODEC_WAV) wavPlayer.flush();
-
-  activeCodec = CODEC_NONE;
-
-  clearPlaylist();
-  playerState = STATE_IDLE;
+  setPaused(PAUSE_TAG_REMOVED);
 }
 
 // ========================================================
@@ -384,13 +688,18 @@ uint8_t updateButton(ButtonState &b, uint32_t now) {
 
   if ((now - b.lastChange) >= BUTTON_DEBOUNCE_MS && raw != b.stableLevel) {
     b.stableLevel = raw;
-    return raw == LOW ? 1 : 2;
+    if (raw == LOW) {
+      b.longHandled = false;
+      b.pressedAt = now;
+      return 1;
+    }
+    return 2;
   }
 
   return 0;
 }
 
-bool readCassetteAlbum(String &album) {
+bool readCassetteAlbum(String &album, uint8_t *uidOut = nullptr, uint8_t *uidLengthOut = nullptr) {
 
   uint8_t uid[7];
   uint8_t uidLength;
@@ -401,11 +710,33 @@ bool readCassetteAlbum(String &album) {
       album.trim();
       album.toLowerCase();
 
-      if (album.length() > 0) return true;
+      if (album.length() > 0) {
+        if (uidOut != nullptr) memcpy(uidOut, uid, uidLength);
+        if (uidLengthOut != nullptr) *uidLengthOut = uidLength;
+        return true;
+      }
 
       Serial.println("Tag present but NDEF unreadable");
     }
     delay(30);
+  }
+
+  return false;
+}
+
+bool tryStartPresentAlbum() {
+  if (!hasPresentTag || presentAlbumName.length() == 0) {
+    Serial.println("Cassette not detected");
+    return false;
+  }
+
+  Serial.print("Album: ");
+  Serial.println(presentAlbumName);
+  startPlaybackFromAlbum(presentAlbumName);
+  if (playerState == STATE_PLAYING) {
+    rememberLoadedTag(presentTagUid, presentTagUidLength);
+    ledMode = LED_INSERT_ANIM;
+    return true;
   }
 
   return false;
@@ -419,35 +750,69 @@ void handleButtons() {
   uint8_t playEvt = updateButton(btnPlay, now);
   uint8_t nextEvt = updateButton(btnNext, now);
 
+  if (!btnPrev.stableLevel && !btnPrev.longHandled &&
+      (now - btnPrev.pressedAt) >= BUTTON_LONG_PRESS_MS) {
+    btnPrev.longHandled = true;
+    startScanPlayback(SCAN_REWIND);
+  }
+
+  if (!btnNext.stableLevel && !btnNext.longHandled &&
+      (now - btnNext.pressedAt) >= BUTTON_LONG_PRESS_MS) {
+    btnNext.longHandled = true;
+    startScanPlayback(SCAN_FAST_FORWARD);
+  }
+
   if (playEvt == 1) {
 
     if (playerState == STATE_PLAYING) {
-      if (activeCodec == CODEC_MP3) mp3Player.pause();
-      else if (activeCodec == CODEC_WAV) wavPlayer.pause();
-      playerState = STATE_PAUSED;
+      setPaused(PAUSE_USER);
     }
 
     else if (playerState == STATE_PAUSED) {
-      if (activeCodec == CODEC_MP3) mp3Player.unpause();
-      else if (activeCodec == CODEC_WAV) wavPlayer.unpause();
-      playerState = STATE_PLAYING;
+      if (!hasPresentTag) {
+        Serial.println("Cassette not detected");
+      } else if (loadedTagMatches(presentTagUid, presentTagUidLength)) {
+        resumePlayback();
+      } else {
+        Serial.print("Album changed: ");
+        Serial.println(presentAlbumName);
+        startPlaybackFromAlbum(presentAlbumName);
+        if (playerState == STATE_PLAYING) {
+          rememberLoadedTag(presentTagUid, presentTagUidLength);
+          ledMode = LED_INSERT_ANIM;
+        }
+      }
     }
 
     else if (playerState == STATE_IDLE) {
-      String album;
-      if (readCassetteAlbum(album)) {
-        Serial.print("Album: ");
-        Serial.println(album);
-        startPlaybackFromAlbum(album);
-        ledMode = LED_INSERT_ANIM;
-      } else {
-        Serial.println("Cassette not detected");
+      if (!hasPresentTag) {
+        String album;
+        uint8_t uid[7];
+        uint8_t uidLength = 0;
+        if (readCassetteAlbum(album, uid, &uidLength)) {
+          rememberPresentTag(uid, uidLength, album);
+        }
       }
+
+      tryStartPresentAlbum();
     }
   }
 
-  if (prevEvt == 2) previousTrack();
-  if (nextEvt == 2) nextTrack();
+  if (prevEvt == 2) {
+    if (scanMode == SCAN_REWIND) {
+      stopScanPlayback();
+    } else if (!btnPrev.longHandled) {
+      previousTrack();
+    }
+  }
+
+  if (nextEvt == 2) {
+    if (scanMode == SCAN_FAST_FORWARD) {
+      stopScanPlayback();
+    } else if (!btnNext.longHandled) {
+      nextTrack();
+    }
+  }
 }
 
 // ========================================================
@@ -455,44 +820,52 @@ void handleButtons() {
 // ========================================================
 
 size_t activeAvailableForWrite() {
-  if (activeCodec == CODEC_MP3) return mp3Player.availableForWrite();
-  if (activeCodec == CODEC_WAV) return wavPlayer.availableForWrite();
-  return 0;
+  if (activeDecoder == nullptr) return 0;
+  return decoderStream.availableForWrite();
 }
 
 size_t activeWrite(const void *data, size_t len) {
-  if (activeCodec == CODEC_MP3) return mp3Player.write(data, len);
-  if (activeCodec == CODEC_WAV) return wavPlayer.write(data, len);
-  return 0;
-}
-
-bool activeDone() {
-  if (activeCodec == CODEC_MP3) return mp3Player.done();
-  if (activeCodec == CODEC_WAV) return wavPlayer.done();
-  return true;
+  if (activeDecoder == nullptr) return 0;
+  return decoderStream.write((const uint8_t *)data, len);
 }
 
 void pumpAudio() {
 
-  while (currentTrackFile && activeAvailableForWrite() >= sizeof(fileBuffer)) {
+  if (playerState != STATE_PLAYING || activeDecoder == nullptr) return;
+
+  int chunksProcessed = 0;
+
+  while (currentTrackFile &&
+         activeAvailableForWrite() >= sizeof(fileBuffer) &&
+         chunksProcessed < AUDIO_PUMP_CHUNKS_PER_LOOP) {
     int len = currentTrackFile.read(fileBuffer, sizeof(fileBuffer));
-    if (len <= 0) { currentTrackFile.close(); break; }
-    activeWrite(fileBuffer, len);
+    if (len <= 0) {
+      currentTrackFile.close();
+      break;
+    }
+
+    size_t written = activeWrite(fileBuffer, len);
+    if (written == 0) break;
+
+    if (written < (size_t)len) {
+      currentTrackFile.seek(currentTrackFile.position() - (len - written));
+      break;
+    }
+
+    chunksProcessed++;
   }
 
-  if (!currentTrackFile && playerState == STATE_PLAYING && activeDone()) {
+  if (!currentTrackFile && activeDecoder != nullptr) {
+    audioOutput.flush();
     nextTrack();
   }
 }
 
 // ========================================================
-// NFC REMOVAL — FIX 2: short timeout + miss counter,
-// no single blocking read deciding removal on its own.
+// NFC STATUS
 // ========================================================
 
-void checkCassetteRemoval() {
-
-  if (playerState != STATE_PLAYING && playerState != STATE_PAUSED) return;
+void checkCassetteStatus() {
 
   static uint32_t last = 0;
   static uint8_t missCount = 0;
@@ -502,20 +875,36 @@ void checkCassetteRemoval() {
 
   uint8_t uid[7], uidLen;
 
-  // Short 50ms timeout — non-blocking enough for the audio pump
   bool seen = nfc.readPassiveTargetID(
     PN532_MIFARE_ISO14443A, uid, &uidLen, 50);
 
   if (seen) {
     missCount = 0;
+
+    if (presentTagMatches(uid, uidLen)) {
+      return;
+    }
+
+    String album;
+    if (!readCassetteAlbum(album, uid, &uidLen)) {
+      return;
+    }
+
+    rememberPresentTag(uid, uidLen, album);
+
+    if (playerState == STATE_PLAYING && !loadedTagMatches(uid, uidLen)) {
+      handleCassetteRemoval();
+    }
+
     return;
   }
 
-  // Require 3 consecutive misses before treating as removed.
-  // Avoids false ejects from momentary read failures.
   if (++missCount >= 3) {
     missCount = 0;
-    handleRemoval();
+    clearPresentTag();
+    if (playerState == STATE_PLAYING) {
+      handleCassetteRemoval();
+    }
   }
 }
 
@@ -543,8 +932,7 @@ void updateVolume() {
   currentGain = filteredPotNorm;
 
   if (fabs(currentGain - lastGain) > 0.01f) {
-    if (activeCodec == CODEC_MP3) mp3Player.setGain(currentGain);
-    else if (activeCodec == CODEC_WAV) wavPlayer.setGain(currentGain);
+    volumeControl.setVolume(currentGain);
     lastGain = currentGain;
   }
 }
@@ -556,6 +944,7 @@ void updateVolume() {
 void setup() {
 
   Serial.begin(115200);
+  AudioToolsLogger.begin(Serial, AudioToolsLogLevel::Warning);
 
   Wire.setSDA(I2C_SDA);
   Wire.setSCL(I2C_SCL);
@@ -576,13 +965,27 @@ void setup() {
     while (1);
   }
 
-  audio.setBCLK(I2S_BCLK);
-  audio.setDATA(I2S_DOUT);
+  auto audioConfig = audioOutput.defaultConfig(TX_MODE);
+  audioConfig.sample_rate = 44100;
+  audioConfig.bits_per_sample = 16;
+  audioConfig.channels = 2;
+  audioConfig.pin_bck = I2S_BCLK;
+  audioConfig.pin_ws = I2S_LRCLK;
+  audioConfig.pin_data = I2S_DOUT;
+  audioConfig.buffer_count = 8;
+  audioConfig.buffer_size = 512;
+  audioOutput.begin(audioConfig);
 
-  if (I2S_LRCLK == (I2S_BCLK - 1))
-    audio.swapClocks();
+  auto volumeConfig = volumeControl.defaultConfig();
+  volumeConfig.sample_rate = 44100;
+  volumeConfig.bits_per_sample = 16;
+  volumeConfig.channels = 2;
+  volumeConfig.volume = currentGain;
+  volumeControl.begin(volumeConfig);
 
-  audio.setFrequency(44100);
+  mp3Decoder.addNotifyAudioChange(volumeControl);
+  wavDecoder.addNotifyAudioChange(volumeControl);
+
   analogReadResolution(12);
 
   nfc.begin();
@@ -594,41 +997,36 @@ void setup() {
 }
 
 // ========================================================
-// LOOP — FIX 3: idle coarse-polling replaces enterSleep().
-// No nested loop; the main loop itself slows down when idle,
-// keeping CPU busy-wait low without blocking anything.
+// LOOP
 // ========================================================
 
 void loop() {
 
-  // FIX 3: When idle, only run at ~20Hz instead of as fast as possible.
-  // NFC is not polled at all during idle — only on play button press.
   if (playerState == STATE_IDLE) {
     static uint32_t lastIdleTick = 0;
     if (millis() - lastIdleTick < 50) return;
     lastIdleTick = millis();
 
+    checkCassetteStatus();
     handleButtons();
     updateLED();
     return;
   }
 
-  updateVolume();
-  pumpAudio();
+  checkCassetteStatus();
   handleButtons();
-  checkCassetteRemoval();
+  updateVolume();
+  updateScanPlayback();
+  pumpAudio();
 
-  switch (playerState) {
-    case STATE_PLAYING: ledMode = LED_SOLID;      break;
-    case STATE_PAUSED:  ledMode = LED_BLINK_SLOW; break;
-    default: break;
-  }
-
-  // Don't override a running animation
-  if (ledMode == LED_INSERT_ANIM ||
-      ledMode == LED_REMOVE_ANIM ||
-      ledMode == LED_BOOT_ANIM) {
-    // let it finish naturally
+  if (ledMode != LED_INSERT_ANIM &&
+      ledMode != LED_REMOVE_ANIM &&
+      ledMode != LED_BOOT_ANIM) {
+    switch (playerState) {
+      case STATE_PLAYING: ledMode = LED_SOLID;      break;
+      case STATE_PAUSED:  ledMode = LED_BLINK_SLOW; break;
+      default: break;
+    }
   }
 
   updateLED();

@@ -1,0 +1,72 @@
+
+======================================================================
+[2026-03-09 15:24:01.491] Arduino Extension 启动 (v0.1.12)
+  平台: darwin arm64
+  VS Code: 1.109.5
+  Node: v22.21.1
+======================================================================
+[2026-03-09 15:24:01.492][INFO] 板卡缓存目录: /Users/morrisaaron/Library/Application Support/Code/User/globalStorage/oakiot.vscode-arduino-cli
+[2026-03-09 15:24:01.492][INFO] [BoardListHistory] 已初始化，加载了 0 个板卡记录，0 个端口记录
+[2026-03-09 15:24:01.492][INFO] [BuildOutputWebview] 编译日志缓存路径: /Users/morrisaaron/Documents/Arduino/WalkBro/Walkbro/.vscode/build-output.log
+[2026-03-09 15:24:01.492][INFO] 刷新板卡列表...
+[2026-03-09 15:24:01.492][INFO] 获取板卡列表...
+[2026-03-09 15:24:01.492][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-03-09 15:24:01.493][INFO] 刷新板卡管理器...
+[2026-03-09 15:24:01.493][INFO] 创建板卡缓存目录: /Users/morrisaaron/Library/Application Support/Code/User/globalStorage/oakiot.vscode-arduino-cli
+[2026-03-09 15:24:01.493][INFO] 获取已安装的平台列表...
+[2026-03-09 15:24:01.493][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-03-09 15:24:01.493][INFO] 获取已安装库列表...
+[2026-03-09 15:24:01.493][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-03-09 15:24:01.495][INFO] 正在检测 Arduino CLI...
+[2026-03-09 15:24:01.495][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-03-09 15:24:01.496][INFO] Arduino CLI 插件激活完成
+[2026-03-09 15:24:01.498][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: arduino-cli: command not found
+
+[2026-03-09 15:24:01.498][INFO] 开始自动检测 Arduino CLI...
+[2026-03-09 15:24:01.498][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-03-09 15:24:01.499][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: arduino-cli: command not found
+
+[2026-03-09 15:24:01.499][INFO] 开始自动检测 Arduino CLI...
+[2026-03-09 15:24:01.499][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-03-09 15:24:01.500][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: arduino-cli: command not found
+
+[2026-03-09 15:24:01.500][INFO] 开始自动检测 Arduino CLI...
+[2026-03-09 15:24:01.500][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-03-09 15:24:01.500][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: arduino-cli: command not found
+
+[2026-03-09 15:24:01.500][INFO] 开始自动检测 Arduino CLI...
+[2026-03-09 15:24:01.500][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-03-09 15:24:01.502][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: arduino-cli: command not found
+
+[2026-03-09 15:24:01.502][WARN] 未能自动检测到 Arduino CLI
+[2026-03-09 15:24:01.502][ERROR] 获取平台列表失败: CliNotReadyError: Arduino CLI 未配置或路径无效，请先执行 "Arduino: Configure CLI Path"
+[2026-03-09 15:24:01.502][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: arduino-cli: command not found
+
+[2026-03-09 15:24:01.502][WARN] 未能自动检测到 Arduino CLI
+[2026-03-09 15:24:01.502][ERROR] 获取已安装库列表失败: CliNotReadyError: Arduino CLI 未配置或路径无效，请先执行 "Arduino: Configure CLI Path"
+[2026-03-09 15:24:01.503][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: arduino-cli: command not found
+
+[2026-03-09 15:24:01.503][WARN] 未能自动检测到 Arduino CLI
+[2026-03-09 15:24:01.503][ERROR] 获取板卡列表失败: CliNotReadyError: Arduino CLI 未配置或路径无效，请先执行 "Arduino: Configure CLI Path"
+[2026-03-09 15:24:01.503][INFO] 获取所有已安装的板卡...
+[2026-03-09 15:24:01.503][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-03-09 15:24:01.503][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: arduino-cli: command not found
+
+[2026-03-09 15:24:01.503][WARN] 未能自动检测到 Arduino CLI
+[2026-03-09 15:24:01.504][WARN] Arduino CLI 未找到
+[2026-03-09 15:24:01.506][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: arduino-cli: command not found
+
+[2026-03-09 15:24:01.506][INFO] 开始自动检测 Arduino CLI...
+[2026-03-09 15:24:01.506][INFO] 验证 Arduino CLI 路径: arduino-cli
+[2026-03-09 15:24:01.509][WARN] Arduino CLI 路径无效: arduino-cli, 错误: 命令执行失败 (退出码: 127): /bin/sh: arduino-cli: command not found
+
+[2026-03-09 15:24:01.509][WARN] 未能自动检测到 Arduino CLI
+[2026-03-09 15:24:01.509][ERROR] 获取板卡列表失败: CliNotReadyError: Arduino CLI 未配置或路径无效，请先执行 "Arduino: Configure CLI Path"
+[2026-03-09 15:24:01.510][INFO] 加载了 0 个平台，共 0 个板卡
+[2026-03-09 16:03:25.701][INFO] Arduino CLI 插件正在停用...
+[2026-03-09 16:03:25.701][INFO] 串口监视器(Terminal)已释放
+[2026-03-09 16:03:25.701][INFO] 串口监视器(WebView)已释放
+[2026-03-09 16:03:25.701][INFO] [BoardDiscovery] 释放资源...
+[2026-03-09 16:03:25.701][INFO] [BoardDiscovery] 资源已释放
+[2026-03-09 16:03:25.701][INFO] Arduino Extension 关闭
+──────────────────────────────────────────────────────────────────────
