@@ -17,37 +17,13 @@
  * Code Name: RoamBro
  * Description: Plays MP3/WAV files and emulates a walkman style tape device.
  * Date: 3/07/2026
- * Notes: V1.0.1 - Added tape-style NFC handling, SD resume state, debug logging, numeric playlist sorting, and control refinements
- *        V1.0.2 - Fixed play-button long-hold reset so release does not restart playback
- *        V1.0.3 - Added optional wow/flutter tape-speed modulation effect
- *        V1.0.4 - Added function-button toggle for wow/flutter at runtime
- *        V1.0.5 - Replaced wow/flutter with toggleable cassette sound mode using hiss and high-cut filtering
- *        V1.0.6 - Added 50Hz high-pass filtering to cassette sound mode
- *        V1.0.7 - Added mild cassette-mode saturation control
- *        V1.0.8 - Made cassette hiss and distortion stages true bypass at zero
- *        V1.0.9 - Removed cassette-mode low-pass filter and kept 50Hz high-pass
- *        V1.0.10 - Restored cassette-mode low-pass filter and removed the high-pass filter
- *        V1.0.11 - Added option to disable cassette-mode filter stage
- *        V1.0.12 - Added short MP3 startup fade-in to reduce track-start popping
- *        V1.0.13 - Added MP3 startup sample discard before fade-in to suppress decoder pop
- *        V1.0.14 - Replaced MP3 startup discard with PoppingSoundRemover plus fade-in
- *        V1.0.15 - Removed all MP3 startup fade and pop-suppression logic
- *        V1.0.16 - Muted audio during scrub scanning to prevent MP3 static bursts
- *        V1.0.17 - Added muted MP3 re-prime after scrub release to avoid static
- *        V1.0.18 - Restored audible scrubbing and added clean decoder resync on scan release
- *        V1.0.19 - Limited scrub-release decoder resync to MP3 so WAV playback no longer restarts at invalid header offsets
- *        V1.0.20 - Fixed resume-state startup so saved positions are not overwritten immediately and invalid restores fall back to track start
- *        V1.0.21 - Added muted MP3 startup priming on fresh track starts to reduce decoder/output transients
- *        V1.0.22 - Added a simple test mode that plays a fixed album folder without NFC or resume logic
- *        V1.0.23 - Replaced MP3 startup muting with an MP3 input discard on fresh track starts
- *        V1.0.24 - Increased MP3 startup discard to two chunks to further reduce startup transients
- *        V1.0.25 - Increased MP3 startup discard to four chunks to reduce startup popping for problematic MP3s
- *        V1.0.26 - Shortened the previous-button restart window so it reaches the prior track more easily
- *        V1.0.27 - Switched previous-button restart logic to playback time instead of buffered file position
- *        V1.0.28 - Limited NFC reads to active playback and play-button presses to reduce idle battery use
- *        V1.0.29 - Flushed I2S with silence on cassette swaps so buffered old audio does not leak through
- *        V1.0.30 - Reduced playback-time NFC work to UID-only polling so audio is not blocked by NDEF reads
- *        V1.0.26 - Replaced input-side MP3 discard with output-side muting to suppress decoder warmup transients
+ * Notes: V1.0.5 - Added tape-style NFC behavior, resume state, debug logging, and the first cassette-effect controls
+ *        V1.0.10 - Refined cassette sound processing with hiss, saturation, and filter changes
+ *        V1.0.15 - Iterated on MP3 track-start pop handling, then removed the ineffective first-pass fixes
+ *        V1.0.20 - Reworked scrub stability and fixed resume-state startup behavior
+ *        V1.0.25 - Added simple test mode and continued MP3 startup transient experiments
+ *        V1.0.30 - Refined transport behavior, battery-saving NFC polling, cassette swap silence flush, and playback-time UID-only tag checks
+ *        V1.0.31 - Collapsed header version history into 0.5 summary entries
  *
  * Hardware:
  * RP2350 "zero" microcontroller
