@@ -69,7 +69,8 @@ While playing:
 
 - the loop polls only for tag UID presence, removal, or a different tag appearing
 - playback-time polling does not read the tag's NDEF album text
-- if no tag is detected for several polls, playback pauses with `PAUSE_TAG_REMOVED`
+- playback-time presence checks use a short NFC read timeout and a faster poll interval so tag removal pauses more promptly
+- if no tag is detected for two consecutive playback polls, playback pauses with `PAUSE_TAG_REMOVED`
 - if a different tag appears, playback also pauses and that new tag becomes the `present tag`
 - on removal or swap, the sketch flushes the I2S output with silence so buffered old audio is cleared immediately
 
@@ -314,11 +315,11 @@ If the resume store does not exist or is invalid:
 LED modes:
 
 - `LED_OFF`
-  idle or no active animation
+  any non-playing steady state after animations finish
 - `LED_SOLID`
   playing
 - `LED_BLINK_SLOW`
-  paused
+  currently unused in the steady-state transport flow
 - `LED_BOOT_ANIM`
   startup animation
 - `LED_INSERT_ANIM`

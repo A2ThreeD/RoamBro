@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoamBro Wiring Diagram</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@400;600&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #111827;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 16px 48px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+  h1 {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 22px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #e0f0ff;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    font-size: 11px;
+    color: #5577aa;
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+  }
+  .diagram-wrap {
+    background: #111827;
+    border: 1px solid #1e3a5f;
+    border-radius: 6px;
+    box-shadow: 0 0 60px rgba(30,80,160,0.25), 0 0 120px rgba(10,30,80,0.4);
+  }
+  svg { display: block; }
+  .legend {
+    margin-top: 20px;
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #7799bb;
+    letter-spacing: 1px;
+  }
+  .legend-swatch { width: 28px; height: 3px; border-radius: 2px; }
+  .wire-shadow {
+    fill: none;
+    stroke: #08101d;
+    stroke-width: 4.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.95;
+  }
+  .wire {
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+</style>
+</head>
+<body>
+<h1>RoamBro</h1>
+<div class="subtitle">WAVESHARE RP2350 ZERO · TAPE EMULATOR · WIRING DIAGRAM</div>
+<div class="diagram-wrap">
+<svg width="1120" height="860" viewBox="0 0 1120 860" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+    <path d="M20 0L0 0 0 20" fill="none" stroke="#161f35" stroke-width="0.5"/>
+  </pattern>
+  <filter id="shadow">
+    <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.65"/>
+  </filter>
+  <filter id="led-glow">
+    <feGaussianBlur stdDeviation="5" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <circle id="pin"    r="3.5" fill="#c8a84b" stroke="#7a6010" stroke-width="1"/>
+  <circle id="pin-sm" r="2.5" fill="#c8a84b" stroke="#7a6010" stroke-width="0.8"/>
+</defs>
+
+<!-- Background -->
+<rect width="1120" height="860" fill="#111827"/>
+<rect width="1120" height="860" fill="url(#grid)"/>
+<radialGradient id="vig" cx="50%" cy="50%" r="70%">
+  <stop offset="0%" stop-color="transparent"/>
+  <stop offset="100%" stop-color="#060c1a" stop-opacity="0.7"/>
+</radialGradient>
+<rect width="1120" height="860" fill="url(#vig)"/>
+
+<!-- ═══════════════════════════════
+     MICROSD MODULE  x=60 y=60  w=170 h=110
+     Bottom pins y=170: CS=80 MOSI=102 CLK=124 MISO=146 VCC=168 GND=190
+═══════════════════════════════ -->
+<g filter="url(#shadow)">
+  <rect x="60" y="60" width="170" height="110" rx="4" fill="#7a3a10" stroke="#4a2008" stroke-width="2"/>
+  <rect x="60" y="60" width="170" height="20"  rx="4" fill="#6a2e0c"/>
+  <text x="145" y="75" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#ffd090" letter-spacing="1">MICROSD MODULE</text>
+  <rect x="195" y="82" width="30" height="22" rx="2" fill="#444" stroke="#333" stroke-width="1"/>
+  <rect x="197" y="84" width="26" height="18" rx="1" fill="#555"/>
+  <text x="210" y="96" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="6" fill="#888">SD</text>
+  <rect x="68" y="85" width="115" height="44" rx="2" fill="#5a2a08" stroke="#3a1a04" stroke-width="1"/>
+
+  <!-- bottom pin header -->
+  <rect x="72" y="164" width="128" height="12" rx="2" fill="#222" stroke="#444" stroke-width="1"/>
+  <use href="#pin" x="80"  y="170"/>
+  <use href="#pin" x="102" y="170"/>
+  <use href="#pin" x="124" y="170"/>
+  <use href="#pin" x="146" y="170"/>
+  <use href="#pin" x="168" y="170"/>
+  <use href="#pin" x="190" y="170"/>
+
+  <text font-family="'Share Tech Mono',monospace" font-size="7" fill="#ffc070" text-anchor="middle">
+    <tspan x="80"  y="159">CS</tspan>
+    <tspan x="102" y="159">MOSI</tspan>
+    <tspan x="124" y="159">CLK</tspan>
+    <tspan x="146" y="159">MISO</tspan>
+    <tspan x="168" y="159">VCC</tspan>
+    <tspan x="190" y="159">GND</tspan>
+  </text>
+</g>
+
+<!-- ═══════════════════════════════
+     PN532 NFC  x=700 y=60  w=200 h=130
+     Bottom pins y=190: VCC=718 GND=740 SDA=762 SCL=784 IRQ=806 RST=828
+═══════════════════════════════ -->
+<g filter="url(#shadow)">
+  <rect x="700" y="60" width="200" height="130" rx="4" fill="#123855" stroke="#0a2030" stroke-width="2"/>
+  <rect x="700" y="60" width="200" height="20"  rx="4" fill="#0d2d42"/>
+  <text x="800" y="75" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#88ddff" letter-spacing="1">PN532 NFC MODULE</text>
+  <rect x="710" y="84"  width="120" height="72" rx="4" fill="#0a2030" stroke="#1a4a6b" stroke-width="1"/>
+  <rect x="716" y="90"  width="108" height="60" rx="3" fill="none" stroke="#1a5a80" stroke-width="1.5"/>
+  <rect x="722" y="96"  width="96"  height="48" rx="2" fill="none" stroke="#1a5a80" stroke-width="1.2"/>
+  <rect x="728" y="102" width="84"  height="36" rx="2" fill="none" stroke="#1a5a80" stroke-width="1"/>
+  <text x="770" y="124" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#1a4a6b">PN532</text>
+  <rect x="840" y="84" width="50" height="40" rx="2" fill="#0a2030" stroke="#1a4060" stroke-width="1"/>
+  <text x="865" y="100" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="#4488aa">I2C</text>
+  <text x="865" y="114" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="#4488aa">MODE</text>
+
+  <rect x="710" y="184" width="128" height="12" rx="2" fill="#222" stroke="#444" stroke-width="1"/>
+  <use href="#pin" x="718" y="190"/>
+  <use href="#pin" x="740" y="190"/>
+  <use href="#pin" x="762" y="190"/>
+  <use href="#pin" x="784" y="190"/>
+  <use href="#pin" x="806" y="190"/>
+  <use href="#pin" x="828" y="190"/>
+
+  <text font-family="'Share Tech Mono',monospace" font-size="7" fill="#88ddff" text-anchor="middle">
+    <tspan x="718" y="179">VCC</tspan>
+    <tspan x="740" y="179">GND</tspan>
+    <tspan x="762" y="179">SDA</tspan>
+    <tspan x="784" y="179">SCL</tspan>
+    <tspan x="806" y="179">IRQ</tspan>
+    <tspan x="828" y="179">RST</tspan>
+  </text>
+</g>
+
+<!-- ═══════════════════════════════
+     RP2350 ZERO  x=380 y=280  w=160 h=280
+     Left pins  x=375: GP2=318 GP3=338 GP4=358 GP5=378 GP6=398 GP7=418 GP8=438 GP9=458 3V3=478 GND=498 GND=518
+     Right pins x=547: GP10=318 GP11=338 GP12=358 GP26=378 GP27=398 GP28=418 GP29=438 5V=458 GND=478 3V3=498
+═══════════════════════════════ -->
+<g filter="url(#shadow)">
+  <rect x="380" y="280" width="160" height="280" rx="4" fill="#1a6b35" stroke="#0d4020" stroke-width="2"/>
+  <rect x="380" y="280" width="160" height="24"  rx="4" fill="#145528"/>
+  <rect x="412" y="272" width="40" height="10" rx="2" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
+  <text x="460" y="297" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#a0ffb0" letter-spacing="1.5">WAVESHARE RP2350 ZERO</text>
+  <rect x="400" y="318" width="120" height="180" rx="3" fill="#112a18" stroke="#1e5530" stroke-width="1"/>
+  <rect x="408" y="326" width="104" height="164" rx="2" fill="#0d2010" stroke="#1a4025" stroke-width="1"/>
+  <text x="460" y="412" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="12" fill="#2a6040" letter-spacing="1">RP2350</text>
+  <text x="460" y="430" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9"  fill="#1e4830">ZERO</text>
+
+  <!-- Left header -->
+  <rect x="368" y="308" width="14" height="220" rx="2" fill="#222" stroke="#444" stroke-width="1"/>
+  <use href="#pin" x="375" y="318"/>
+  <use href="#pin" x="375" y="338"/>
+  <use href="#pin" x="375" y="358"/>
+  <use href="#pin" x="375" y="378"/>
+  <use href="#pin" x="375" y="398"/>
+  <use href="#pin" x="375" y="418"/>
+  <use href="#pin" x="375" y="438"/>
+  <use href="#pin" x="375" y="458"/>
+  <use href="#pin" x="375" y="478"/>
+  <use href="#pin" x="375" y="498"/>
+  <use href="#pin" x="375" y="518"/>
+
+  <text font-family="'Share Tech Mono',monospace" font-size="7.5" fill="#70c090" text-anchor="start">
+    <tspan x="384" y="321">GP2  SD_CLK</tspan>
+    <tspan x="384" y="341">GP3  SD_MOSI</tspan>
+    <tspan x="384" y="361">GP4  SD_MISO</tspan>
+    <tspan x="384" y="381">GP5  SD_CS</tspan>
+    <tspan x="384" y="401">GP6  LED</tspan>
+    <tspan x="384" y="421">GP7  BTN_FUNC</tspan>
+    <tspan x="384" y="441">GP8  I2C_SDA</tspan>
+    <tspan x="384" y="461">GP9  I2C_SCL</tspan>
+    <tspan x="384" y="481">3V3</tspan>
+    <tspan x="384" y="501">GND</tspan>
+    <tspan x="384" y="521">GND</tspan>
+  </text>
+
+  <!-- Right header -->
+  <rect x="540" y="308" width="14" height="200" rx="2" fill="#222" stroke="#444" stroke-width="1"/>
+  <use href="#pin" x="547" y="318"/>
+  <use href="#pin" x="547" y="338"/>
+  <use href="#pin" x="547" y="358"/>
+  <use href="#pin" x="547" y="378"/>
+  <use href="#pin" x="547" y="398"/>
+  <use href="#pin" x="547" y="418"/>
+  <use href="#pin" x="547" y="438"/>
+  <use href="#pin" x="547" y="458"/>
+  <use href="#pin" x="547" y="478"/>
+  <use href="#pin" x="547" y="498"/>
+
+  <text font-family="'Share Tech Mono',monospace" font-size="7.5" fill="#70c090" text-anchor="end">
+    <tspan x="538" y="321">I2S_BCLK  GP10</tspan>
+    <tspan x="538" y="341">I2S_LRCK  GP11</tspan>
+    <tspan x="538" y="361">I2S_DOUT  GP12</tspan>
+    <tspan x="538" y="381">VOL_ADC   GP26</tspan>
+    <tspan x="538" y="401">BTN_PLAY  GP27</tspan>
+    <tspan x="538" y="421">BTN_PREV  GP28</tspan>
+    <tspan x="538" y="441">BTN_NEXT  GP29</tspan>
+    <tspan x="538" y="461">5V</tspan>
+    <tspan x="538" y="481">GND</tspan>
+    <tspan x="538" y="501">3V3</tspan>
+  </text>
+</g>
+
+<!-- ═══════════════════════════════
+     PCM5102 DAC  x=740 y=300  w=130 h=130
+     Left pins x=735:  VCC=330 GND=344 BCK=358 DIN=372 LCK=386 FMT=400
+     Right pins x=877: AGND=330 VOUTL=344 VOUTR=358 3V3=372
+═══════════════════════════════ -->
+<g filter="url(#shadow)">
+  <rect x="740" y="300" width="130" height="130" rx="4" fill="#2d1870" stroke="#1a0e50" stroke-width="2"/>
+  <rect x="740" y="300" width="130" height="20"  rx="4" fill="#22106a"/>
+  <text x="805" y="315" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#c0aaff" letter-spacing="1">PCM5102 DAC</text>
+  <rect x="758" y="326" width="64" height="80" rx="2" fill="#1a0e40" stroke="#3a2070" stroke-width="1"/>
+  <text x="790" y="368" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#4030a0">PCM5102</text>
+  <circle cx="761" cy="329" r="2" fill="#3a2070"/>
+
+  <rect x="728" y="322" width="14" height="86" rx="2" fill="#222" stroke="#444" stroke-width="1"/>
+  <use href="#pin" x="735" y="330"/>
+  <use href="#pin" x="735" y="344"/>
+  <use href="#pin" x="735" y="358"/>
+  <use href="#pin" x="735" y="372"/>
+  <use href="#pin" x="735" y="386"/>
+  <use href="#pin" x="735" y="400"/>
+  <text font-family="'Share Tech Mono',monospace" font-size="7" fill="#aa88ff" text-anchor="start">
+    <tspan x="744" y="333">VCC</tspan>
+    <tspan x="744" y="347">GND</tspan>
+    <tspan x="744" y="361">BCK</tspan>
+    <tspan x="744" y="375">DIN</tspan>
+    <tspan x="744" y="389">LCK</tspan>
+    <tspan x="744" y="403">FMT</tspan>
+  </text>
+
+  <rect x="870" y="322" width="14" height="58" rx="2" fill="#222" stroke="#444" stroke-width="1"/>
+  <use href="#pin" x="877" y="330"/>
+  <use href="#pin" x="877" y="344"/>
+  <use href="#pin" x="877" y="358"/>
+  <use href="#pin" x="877" y="372"/>
+  <text font-family="'Share Tech Mono',monospace" font-size="7" fill="#aa88ff" text-anchor="end">
+    <tspan x="868" y="333">AGND</tspan>
+    <tspan x="868" y="347">VOUT L</tspan>
+    <tspan x="868" y="361">VOUT R</tspan>
+    <tspan x="868" y="375">3.3V</tspan>
+  </text>
+</g>
+
+<!-- ═══════════════════════════════
+     3.5mm AUDIO JACK  x=960 y=308  w=80 h=90
+     Bottom pins: L=980 GND=1000 R=1020  y=398
+═══════════════════════════════ -->
+<g filter="url(#shadow)">
+  <rect x="960" y="308" width="80" height="80" rx="4" fill="#222" stroke="#3a3a3a" stroke-width="1.5"/>
+  <circle cx="1000" cy="346" r="24" fill="#111" stroke="#333" stroke-width="2"/>
+  <circle cx="1000" cy="346" r="17" fill="#0a0a0a" stroke="#222" stroke-width="1"/>
+  <circle cx="1000" cy="346" r="5"  fill="#444"/>
+  <text x="1000" y="402" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#aaa">3.5mm</text>
+  <text x="1000" y="414" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#aaa">AUDIO OUT</text>
+  <use href="#pin" x="980"  y="398"/>
+  <use href="#pin" x="1000" y="398"/>
+  <use href="#pin" x="1020" y="398"/>
+  <text font-family="'Share Tech Mono',monospace" font-size="6.5" fill="#888" text-anchor="middle">
+    <tspan x="980"  y="412">L</tspan>
+    <tspan x="1000" y="412">GND</tspan>
+    <tspan x="1020" y="412">R</tspan>
+  </text>
+</g>
+
+<!-- ═══════════════════════════════
+     BUTTONS  y=618  (spaced wider)
+     PREV x=50  PLAY x=150  NEXT x=250  FUNC x=350
+     Signal pins (right leg): PREV=94 PLAY=184 NEXT=274 FUNC=364  y=660
+     GND pins   (left leg):   PREV=60 PLAY=150 NEXT=240 FUNC=330  y=660
+═══════════════════════════════ -->
+<g filter="url(#shadow)">
+  <rect x="46" y="618" width="62" height="48" rx="6" fill="#1e1e2e" stroke="#3a3a5a" stroke-width="1.5"/>
+  <circle cx="77" cy="638" r="12" fill="#881a1a" stroke="#551010" stroke-width="2"/>
+  <circle cx="77" cy="638" r="7"  fill="#cc3333"/>
+  <text x="77" y="680" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#8888aa">PREV</text>
+  <text x="77" y="691" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="#445566">GP28</text>
+  <use href="#pin" x="60"  y="666"/>
+  <use href="#pin" x="94"  y="666"/>
+</g>
+<g filter="url(#shadow)">
+  <rect x="136" y="618" width="62" height="48" rx="6" fill="#1e1e2e" stroke="#3a3a5a" stroke-width="1.5"/>
+  <circle cx="167" cy="638" r="12" fill="#116611" stroke="#0a440a" stroke-width="2"/>
+  <circle cx="167" cy="638" r="7"  fill="#22aa22"/>
+  <text x="167" y="680" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#8888aa">PLAY</text>
+  <text x="167" y="691" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="#445566">GP27</text>
+  <use href="#pin" x="150" y="666"/>
+  <use href="#pin" x="184" y="666"/>
+</g>
+<g filter="url(#shadow)">
+  <rect x="226" y="618" width="62" height="48" rx="6" fill="#1e1e2e" stroke="#3a3a5a" stroke-width="1.5"/>
+  <circle cx="257" cy="638" r="12" fill="#881a1a" stroke="#551010" stroke-width="2"/>
+  <circle cx="257" cy="638" r="7"  fill="#cc3333"/>
+  <text x="257" y="680" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#8888aa">NEXT</text>
+  <text x="257" y="691" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="#445566">GP29</text>
+  <use href="#pin" x="240" y="666"/>
+  <use href="#pin" x="274" y="666"/>
+</g>
+<g filter="url(#shadow)">
+  <rect x="316" y="618" width="62" height="48" rx="6" fill="#1e1e2e" stroke="#3a3a5a" stroke-width="1.5"/>
+  <circle cx="347" cy="638" r="12" fill="#112266" stroke="#0a1444" stroke-width="2"/>
+  <circle cx="347" cy="638" r="7"  fill="#2244bb"/>
+  <text x="347" y="680" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#8888aa">FUNC</text>
+  <text x="347" y="691" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="#445566">GP7</text>
+  <use href="#pin" x="330" y="666"/>
+  <use href="#pin" x="364" y="666"/>
+</g>
+
+<!-- ═══════════════════════════════
+     10K POT  x=670 y=598
+     Pins: GND=689 WIPER=713 3V3=737  y=680
+═══════════════════════════════ -->
+<g filter="url(#shadow)">
+  <rect x="668" y="598" width="92" height="82" rx="6" fill="#1e1e1e" stroke="#3a3a3a" stroke-width="1.5"/>
+  <circle cx="714" cy="630" r="24" fill="#282828" stroke="#444" stroke-width="2"/>
+  <circle cx="714" cy="630" r="17" fill="#333"    stroke="#555" stroke-width="1.5"/>
+  <circle cx="714" cy="630" r="5"  fill="#555"/>
+  <line   x1="714" y1="630" x2="714" y2="612" stroke="#ffcc44" stroke-width="2.5" stroke-linecap="round"/>
+  <text x="714" y="696" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#aaa">10K POT</text>
+  <text x="714" y="707" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="#556688">VOLUME · GP26</text>
+  <use href="#pin" x="689" y="680"/>
+  <use href="#pin" x="714" y="680"/>
+  <use href="#pin" x="737" y="680"/>
+  <text font-family="'Share Tech Mono',monospace" font-size="6.5" fill="#887755" text-anchor="middle">
+    <tspan x="689" y="694">GND</tspan>
+    <tspan x="714" y="694">WIPER</tspan>
+    <tspan x="737" y="694">3V3</tspan>
+  </text>
+</g>
+
+<!-- ═══════════════════════════════
+     RED STATUS LED  x=490 y=706
+═══════════════════════════════ -->
+<g filter="url(#led-glow)">
+  <ellipse cx="510" cy="718" rx="13" ry="16" fill="#cc2200" stroke="#881500" stroke-width="1.5"/>
+  <ellipse cx="510" cy="711" rx="9"  ry="8"  fill="#ff5533" opacity="0.7"/>
+  <!-- leads: anode left x=502, cathode right x=518 -->
+  <line x1="502" y1="734" x2="502" y2="762" stroke="#c8a84b" stroke-width="2"/>
+  <line x1="518" y1="734" x2="518" y2="758" stroke="#c8a84b" stroke-width="2"/>
+  <line x1="503" y1="733" x2="518" y2="733" stroke="#881500" stroke-width="1.5"/>
+  <text x="510" y="782" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#ee4422">STATUS LED</text>
+  <text x="510" y="793" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="#556688">GP6 · 330Ω</text>
+  <!-- 330Ω resistor on cathode side -->
+  <line  x1="518" y1="758" x2="548" y2="758" stroke="#c8a84b" stroke-width="1.5"/>
+  <rect  x="548" y="752"  width="32" height="12" rx="2" fill="#c8a84b" stroke="#8a6a20" stroke-width="1"/>
+  <line  x1="580" y1="758" x2="608" y2="758" stroke="#888" stroke-width="1.5"/>
+  <text x="564" y="748" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="7" fill="#c8a84b">330Ω</text>
+  <use href="#pin-sm" x="502" y="762"/>
+  <use href="#pin-sm" x="518" y="758"/>
+</g>
+
+<!-- ═══════════════════════════════════════════════════════
+     WIRES — all routes avoid component bounding boxes.
+
+     SAFE ROUTING CHANNELS:
+       H rows above SD/NFC (y < 60):  y=14, 26, 38, 50
+       H rows between SD bottom and RP top (200 < y < 280): y=210,222,234,246,258,270
+       H rows between RP bottom and buttons top (570 < y < 618): y=580,590,600,610
+       H rows below buttons/pot/LED (y > 800): y=808,820,832,844
+       V cols left of SD (x < 60):   x=20,32,44
+       V cols between SD-right and RP-left (240 < x < 380): x=252,264,276,288,300,312,324,336,348
+       V cols between RP-right and PCM-left (554 < x < 728): x=566,578,590,602,614,626,638,650,662,674,686,698,710
+       V cols right of Jack (x > 1050): x=1060,1072,1084
+═══════════════════════════════════════════════════════ -->
+
+<!-- ────────────────────────────────
+     SPI TO SD CARD  (orange)
+     Each wire goes: RP-left → V-channel between SD and RP → H-channel above SD → SD pin
+     GP2 SD_CLK  → channel x=252, row y=14, SD CLK x=124
+     GP3 SD_MOSI → channel x=264, row y=26, SD MOSI x=102
+     GP4 SD_MISO → channel x=276, row y=38, SD MISO x=146
+     GP5 SD_CS   → channel x=288, row y=50, SD CS   x=80
+──────────────────────────────── -->
+<polyline class="wire-shadow" points="375,318  252,318  252,14   124,14   124,170"/>
+<polyline class="wire" points="375,318  252,318  252,14   124,14   124,170" stroke="#ff8800"/>
+<polyline class="wire-shadow" points="375,338  264,338  264,26   102,26   102,170"/>
+<polyline class="wire" points="375,338  264,338  264,26   102,26   102,170" stroke="#ff8800"/>
+<polyline class="wire-shadow" points="375,358  276,358  276,38   146,38   146,170"/>
+<polyline class="wire" points="375,358  276,358  276,38   146,38   146,170" stroke="#ff8800"/>
+<polyline class="wire-shadow" points="375,378  288,378  288,50   80,50    80,170"/>
+<polyline class="wire" points="375,378  288,378  288,50   80,50    80,170" stroke="#ff8800"/>
+
+<!-- ────────────────────────────────
+     SD VCC (red) and SD GND (dark)
+     SD VCC  x=168 y=170: from 3V3 power, routed via x=300 y=222
+     SD GND  x=190 y=170: from GND rail, routed via x=312 y=234
+──────────────────────────────── -->
+<!-- SD VCC: 3V3 power node at x=300 y=210 → y=222 → x=168 → y=170 -->
+<!-- (3V3 rail defined below; this stub connects from it) -->
+<polyline class="wire-shadow" points="300,222  168,222  168,170"/>
+<polyline class="wire" points="300,222  168,222  168,170" stroke="#ff4444"/>
+<!-- SD GND: GND rail node → x=312 y=234 → x=190 → y=170 -->
+<polyline class="wire-shadow" points="312,234  190,234  190,170"/>
+<polyline class="wire" points="312,234  190,234  190,170" stroke="#555"/>
+
+<!-- ────────────────────────────────
+     I2S TO PCM5102  (yellow)
+     GP10 BCLK → PCM BCK y=358: RP-right x=547,y=318 → x=566 → y=358 → x=735
+     GP11 LRCK → PCM LCK y=386: RP-right x=547,y=338 → x=578 → y=386 → x=735
+     GP12 DOUT → PCM DIN y=372: RP-right x=547,y=358 → x=590 → y=372 → x=735
+──────────────────────────────── -->
+<polyline class="wire-shadow" points="547,318  566,318  566,358  735,358"/>
+<polyline class="wire" points="547,318  566,318  566,358  735,358" stroke="#ffdd00"/>
+<polyline class="wire-shadow" points="547,338  578,338  578,386  735,386"/>
+<polyline class="wire" points="547,338  578,338  578,386  735,386" stroke="#ffdd00"/>
+<polyline class="wire-shadow" points="547,358  590,358  590,372  735,372"/>
+<polyline class="wire" points="547,358  590,358  590,372  735,372" stroke="#ffdd00"/>
+
+<!-- ────────────────────────────────
+     I2C TO PN532  (cyan)
+     GP8 SDA → PN532 SDA x=762 y=190
+     GP9 SCL → PN532 SCL x=784 y=190
+     Route: RP-left → go left to x=336 → up to y=258 → right above RP top → under PN532 → up to pins
+──────────────────────────────── -->
+<polyline class="wire-shadow" points="375,438  336,438  336,258  762,258  762,190"/>
+<polyline class="wire" points="375,438  336,438  336,258  762,258  762,190" stroke="#00dddd"/>
+<polyline class="wire-shadow" points="375,458  324,458  324,246  784,246  784,190"/>
+<polyline class="wire" points="375,458  324,458  324,246  784,246  784,190" stroke="#00dddd"/>
+
+<!-- ────────────────────────────────
+     BUTTONS  (green)
+     Routes: RP-right → channel right of RP → row below RP → down to button signal pin
+     GP27 PLAY  → y=580 → x=184 → y=666
+     GP28 PREV  → y=590 → x=94  → y=666
+     GP29 NEXT  → y=600 → x=274 → y=666
+     GP7  FUNC  → RP-left x=375 → x=348 → y=610 → x=364 → y=666
+──────────────────────────────── -->
+<polyline class="wire-shadow" points="547,398  662,398  662,580  184,580  184,666"/>
+<polyline class="wire" points="547,398  662,398  662,580  184,580  184,666" stroke="#44dd44"/>
+<polyline class="wire-shadow" points="547,418  674,418  674,590  94,590   94,666"/>
+<polyline class="wire" points="547,418  674,418  674,590  94,590   94,666" stroke="#44dd44"/>
+<polyline class="wire-shadow" points="547,438  686,438  686,600  274,600  274,666"/>
+<polyline class="wire" points="547,438  686,438  686,600  274,600  274,666" stroke="#44dd44"/>
+<polyline class="wire-shadow" points="375,418  348,418  348,610  364,610  364,666"/>
+<polyline class="wire" points="375,418  348,418  348,610  364,610  364,666" stroke="#44dd44"/>
+
+<!-- Button GND legs all share a bus at y=808, connects back to RP GND y=518 via left channel x=44 -->
+<polyline class="wire-shadow" points="60,666   60,808"/>
+<polyline class="wire" points="60,666   60,808" stroke="#555"/>
+<polyline class="wire-shadow" points="150,666  150,808"/>
+<polyline class="wire" points="150,666  150,808" stroke="#555"/>
+<polyline class="wire-shadow" points="240,666  240,808"/>
+<polyline class="wire" points="240,666  240,808" stroke="#555"/>
+<polyline class="wire-shadow" points="330,666  330,808"/>
+<polyline class="wire" points="330,666  330,808" stroke="#555"/>
+<!-- GND bus horizontal at y=808 from x=44 to x=330, then up left channel to RP GND -->
+<line x1="44" y1="808" x2="330" y2="808" class="wire-shadow"/>
+<line x1="44" y1="808" x2="330" y2="808" class="wire" stroke="#555"/>
+<polyline class="wire-shadow" points="44,808  44,518  375,518"/>
+<polyline class="wire" points="44,808  44,518  375,518" stroke="#555"/>
+<!-- junction dots on bus -->
+<circle cx="150" cy="808" r="3.5" fill="#555"/>
+<circle cx="240" cy="808" r="3.5" fill="#555"/>
+<circle cx="330" cy="808" r="3.5" fill="#555"/>
+<circle cx="60"  cy="808" r="3.5" fill="#555"/>
+
+<!-- ────────────────────────────────
+     LED  GP6  (lime green)
+     Routed on the outer-left and bottom perimeter to keep clear of controls and buses
+──────────────────────────────── -->
+<polyline class="wire-shadow" points="375,398  20,398  20,844  490,844  490,780  502,780  502,762"/>
+<polyline class="wire" points="375,398  20,398  20,844  490,844  490,780  502,780  502,762" stroke="#99ff44"/>
+<!-- LED cathode (after resistor at x=608) → perimeter return at y=832 → left GND trunk -->
+<polyline class="wire-shadow" points="608,758  608,832  44,832  44,808"/>
+<polyline class="wire" points="608,758  608,832  44,832  44,808" stroke="#555"/>
+<circle cx="44" cy="832" r="3.5" fill="#555"/>
+<circle cx="44" cy="808" r="3.5" fill="#555"/>
+
+<!-- ────────────────────────────────
+     VOLUME POT  GP26  (purple)
+     Routed on a dedicated lower-right return so it stays clear of the button bundle
+──────────────────────────────── -->
+<polyline class="wire-shadow" points="547,378  698,378  698,820  714,820  714,680"/>
+<polyline class="wire" points="547,378  698,378  698,820  714,820  714,680" stroke="#aa66ff"/>
+<!-- Pot GND x=689 y=680 → down to GND bus y=808 -->
+<polyline class="wire-shadow" points="689,680  689,808"/>
+<polyline class="wire" points="689,680  689,808" stroke="#555"/>
+<circle cx="689" cy="808" r="3.5" fill="#555"/>
+
+<!-- ────────────────────────────────
+     AUDIO OUT  PCM → 3.5mm Jack  (white)
+     VOUTL x=877,y=344 → x=914 → y=398 → jack L x=980
+     VOUTR x=877,y=358 → x=928 → y=406 → jack R x=1020,y=398
+──────────────────────────────── -->
+<polyline class="wire-shadow" points="877,344  914,344  914,398  980,398"/>
+<polyline class="wire" points="877,344  914,344  914,398  980,398" stroke="#ddddee"/>
+<polyline class="wire-shadow" points="877,358  928,358  928,406  1020,406  1020,398"/>
+<polyline class="wire" points="877,358  928,358  928,406  1020,406  1020,398" stroke="#ddddee"/>
+<!-- Jack GND x=1000,y=398 → x=942 → up to PCM AGND x=877,y=330 -->
+<polyline class="wire-shadow" points="1000,398  1000,430  942,430  942,330  877,330"/>
+<polyline class="wire" points="1000,398  1000,430  942,430  942,330  877,330" stroke="#555"/>
+
+<!-- PCM FMT/SCK → GND tie (dashed, stays left of PCM left edge x=728) -->
+<polyline class="wire-shadow" points="735,400  710,400  710,416  735,416  735,344"/>
+<polyline points="735,400  710,400  710,416  735,416  735,344"
+  fill="none" stroke="#555" stroke-width="1.5" stroke-dasharray="5,3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="696" y="410" font-family="'Share Tech Mono',monospace" font-size="6" fill="#446644">GND</text>
+
+<!-- ────────────────────────────────
+     3V3 POWER RAIL  (red)
+     Main node: RP right 3V3 x=547 y=498
+
+     Branch 1: → SD VCC via channel x=300
+       547,498 → 300,498 → 300,222  (stub to SD drawn above)
+     Branch 2: → PCM VCC x=735 y=330
+       via channel x=566 (already used for I2S at y=318 only; safe below)
+       from x=602 y=498 → up to y=270 → x=735 → y=330
+     Branch 3: → PN532 VCC x=718 y=190
+       from branch2 node at x=602,y=270 → up y=210 → x=718 → y=190
+     Branch 4: → PCM right 3V3 x=877 y=372 → outer-right perimeter → Pot 3V3 x=737 y=680
+──────────────────────────────── -->
+<!-- Main 3V3 horizontal from RP right to channel x=300 -->
+<polyline class="wire-shadow" points="547,498  300,498  300,222"/>
+<polyline class="wire" points="547,498  300,498  300,222" stroke="#ff4444"/>
+<!-- SD VCC stub (connects to node at 300,222) -->
+<!-- already drawn above: 300,222 → 168,222 → 168,170 -->
+
+<!-- Branch to PCM VCC and PN532 VCC: fork at x=602 going up -->
+<polyline class="wire-shadow" points="547,498  602,498  602,270  735,270  735,330"/>
+<polyline class="wire" points="547,498  602,498  602,270  735,270  735,330" stroke="#ff4444"/>
+<polyline class="wire-shadow" points="602,270  602,210  718,210  718,190"/>
+<polyline class="wire" points="602,270  602,210  718,210  718,190" stroke="#ff4444"/>
+<!-- PCM right 3V3 x=877,y=372 → right channel x=1060 → down to pot 3V3 x=737,y=680 -->
+<polyline class="wire-shadow" points="877,372  1072,372  1072,668  737,668  737,680"/>
+<polyline class="wire" points="877,372  1072,372  1072,668  737,668  737,680" stroke="#ff4444"/>
+
+<!-- Junction dots -->
+<circle cx="300" cy="498" r="3.5" fill="#ff4444"/>
+<circle cx="602" cy="498" r="3.5" fill="#ff4444"/>
+<circle cx="602" cy="270" r="3.5" fill="#ff4444"/>
+<circle cx="300" cy="222" r="3.5" fill="#ff4444"/>
+<circle cx="547" cy="498" r="3.5" fill="#ff4444"/>
+
+<!-- ────────────────────────────────
+     GND POWER RAIL  (dark grey)
+     Main node: RP left GND x=375 y=498 + y=518
+     RP GND at y=498 also serves right-side GND via left channel x=44 (already connected via buttons above)
+
+     Branch → SD GND via channel x=312 y=234
+     Branch → PCM GND x=735 y=344 via channel x=614
+     Branch → PN532 GND x=740 y=190 from PCM branch
+──────────────────────────────── -->
+<!-- SD GND stub already drawn: 312,234 → 190,234 → 190,170 -->
+<!-- GND horizontal from RP left to channel x=312 -->
+<polyline class="wire-shadow" points="375,498  312,498  312,234"/>
+<polyline class="wire" points="375,498  312,498  312,234" stroke="#555"/>
+<!-- PCM GND from RP right GND x=547,y=478 → x=614 → y=282 → x=735 → y=344 -->
+<polyline class="wire-shadow" points="547,478  614,478  614,282  735,282  735,344"/>
+<polyline class="wire" points="547,478  614,478  614,282  735,282  735,344" stroke="#555"/>
+<!-- PN532 GND from PCM GND branch at x=614,y=282 → y=198 → x=740 → y=190 -->
+<polyline class="wire-shadow" points="614,282  614,198  740,198  740,190"/>
+<polyline class="wire" points="614,282  614,198  740,198  740,190" stroke="#555"/>
+<!-- Left channel up from RP GND: x=44 → y=518 (already drawn via button GND bus) -->
+<circle cx="312" cy="498" r="3.5" fill="#555"/>
+<circle cx="614" cy="282" r="3.5" fill="#555"/>
+<circle cx="375" cy="498" r="3.5" fill="#555"/>
+<circle cx="547" cy="478" r="3.5" fill="#555"/>
+
+<!-- ═══════════════════════════════
+     TITLE BAR
+═══════════════════════════════ -->
+<rect x="0" y="836" width="1120" height="24" fill="#0d1525"/>
+<line x1="0" y1="836" x2="1120" y2="836" stroke="#1e3a5f" stroke-width="1"/>
+<text x="16"   y="852" font-family="'Oswald',sans-serif"         font-size="11" fill="#3a6090" letter-spacing="3">A2THREED</text>
+<text x="560"  y="852" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#2a5080" letter-spacing="2">ROAMBRO WIRING DIAGRAM · WAVESHARE RP2350 ZERO</text>
+<text x="1104" y="852" text-anchor="end"    font-family="'Share Tech Mono',monospace" font-size="10" fill="#2a5080">GPIO MAP INCLUDED</text>
+
+</svg>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#ff4444"></div>3.3V POWER</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#555;border:1px solid #777"></div>GND</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#ff8800"></div>SPI · SD CARD</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#ffdd00"></div>I2S · AUDIO</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#00dddd"></div>I2C · NFC</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#44dd44"></div>GPIO · BUTTONS</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#99ff44"></div>GPIO · LED</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#aa66ff"></div>ADC · VOLUME</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#ddddee"></div>AUDIO OUT</div>
+</div>
+
+</body>
+</html>

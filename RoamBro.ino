@@ -24,6 +24,9 @@
  *        V1.0.25 - Added simple test mode and continued MP3 startup transient experiments
  *        V1.0.30 - Refined transport behavior, battery-saving NFC polling, cassette swap silence flush, and playback-time UID-only tag checks
  *        V1.0.31 - Collapsed header version history into 0.5 summary entries
+ *        V1.0.32 - Tightened playback-time NFC removal detection to reduce tag-pull stutter before pause
+ *        V1.0.33 - Kept the LED off after cassette-removal pause instead of falling back to paused blink
+ *        V1.0.34 - Simplified steady LED behavior so only active playback stays lit
  *
  * Hardware:
  * RP2350 "zero" microcontroller
@@ -129,6 +132,9 @@
 #define CASSETTE_LOWPASS_HZ 13000.0f
 #define CASSETTE_DISTORTION_PERCENT 2.0f
 #define SCAN_MONITOR_GAIN 1.0f
+#define NFC_PLAYBACK_POLL_INTERVAL_MS 120
+#define NFC_PRESENCE_READ_TIMEOUT_MS 20
+#define NFC_REMOVAL_MISS_THRESHOLD 2
 
 class CassetteSoundStream : public AudioStream {
  public:
@@ -1525,13 +1531,13 @@ void checkCassetteStatus() {
   static uint32_t last = 0;
   static uint8_t missCount = 0;
 
-  if (millis() - last < 300) return;
+  if (millis() - last < NFC_PLAYBACK_POLL_INTERVAL_MS) return;
   last = millis();
 
   uint8_t uid[7], uidLen;
 
   bool seen = nfc.readPassiveTargetID(
-    PN532_MIFARE_ISO14443A, uid, &uidLen, 50);
+    PN532_MIFARE_ISO14443A, uid, &uidLen, NFC_PRESENCE_READ_TIMEOUT_MS);
 
   if (seen) {
     missCount = 0;
@@ -1550,7 +1556,7 @@ void checkCassetteStatus() {
     return;
   }
 
-  if (++missCount >= 3) {
+  if (++missCount >= NFC_REMOVAL_MISS_THRESHOLD) {
     missCount = 0;
     clearPresentTag();
     DBG_PRINTLN("[TAG] No cassette detected");
@@ -1693,7 +1699,7 @@ void loop() {
       ledMode != LED_BOOT_ANIM) {
     switch (playerState) {
       case STATE_PLAYING: ledMode = LED_SOLID;      break;
-      case STATE_PAUSED:  ledMode = LED_BLINK_SLOW; break;
+      case STATE_PAUSED:  ledMode = LED_OFF;        break;
       default: break;
     }
   }
